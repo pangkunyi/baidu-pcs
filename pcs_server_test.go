@@ -18,5 +18,8 @@ func musicHandler(w http.ResponseWriter, r *http.Request) {
 
 func TestServer(t *testing.T) {
 	http.HandleFunc("/music/a.mp3", musicHandler)
-	http.ListenAndServe(":8808", nil)
+	err := http.ListenAndServe(":8808", nil)
+	if err != nil {
+		panic(err)
+	}
 }

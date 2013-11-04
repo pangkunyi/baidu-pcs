@@ -2,7 +2,6 @@ package pcs
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -95,7 +94,6 @@ func getData(_url string, params url.Values, w io.Writer) (err error) {
  * request url with params in get method, and reponse would be a json string
  */
 func getJson(_url string, params url.Values, v interface{}) (err error) {
-	fmt.Println(_url + "?" + params.Encode())
 	if resp, err := http.Get(_url + "?" + params.Encode()); err == nil {
 		defer resp.Body.Close()
 		if body, err := ioutil.ReadAll(resp.Body); err == nil {
@@ -122,18 +120,26 @@ func postJson(_url string, params url.Values, v interface{}) (err error) {
  * parse a request object to url.Values, the request object's feild must be all string type and has the pcs tag
  */
 func parseUrlValues(i interface{}) (values url.Values) {
+	values = make(url.Values)
+	_parseUrlValues(i, &values)
+	return
+}
+func _parseUrlValues(i interface{}, values *url.Values) {
 	v := reflect.ValueOf(i).Elem()
 	t := v.Type()
-	values = make(url.Values)
 	idx := 0
 	for ; idx < v.NumField(); idx++ {
 		f := v.Field(idx)
 		tf := t.Field(idx)
-		tag := tf.Tag.Get("pcs")
-		if tag != "" {
-			val := f.Interface().(string)
-			if val != "" {
-				values.Add(tag, val)
+		if tf.Anonymous {
+			_parseUrlValues(f.Addr().Interface(), values)
+		} else {
+			tag := tf.Tag.Get("pcs")
+			if tag != "" {
+				val := f.Interface().(string)
+				if val != "" {
+					values.Add(tag, val)
+				}
 			}
 		}
 	}
